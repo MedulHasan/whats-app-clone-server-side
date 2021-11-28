@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient } = require("mongodb");
+const { MongoClient, CURSOR_FLAGS } = require("mongodb");
 const fileUpload = require("express-fileupload");
 require("dotenv").config();
 
@@ -24,19 +24,44 @@ async function run() {
         const userCollection = database.collection("users");
         console.log("Database connected");
 
+        app.get("/users", async (req, res) => {
+            const cursor = userCollection.find({});
+            const result = await cursor.toArray();
+            res.json(result);
+        });
+        app.get("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await userCollection.findOne(query);
+            res.json(result);
+        });
+
         app.post("/user", async (req, res) => {
-            const { fullName, email, password } = req.body;
-            const image = req.files.image;
-            const imageData = image.data;
-            const encodedData = imageData.toString("base64");
-            const imageBuffer = Buffer.from(encodedData, "base64");
+            const { fullName, email, imageURL } = req.body;
+            // const image = req.files.image;
+            // const imageData = image.data;
+            // const encodedData = imageData.toString("base64");
+            // const imageBuffer = Buffer.from(encodedData, "base64");
             const user = {
                 fullName,
                 email,
-                password,
-                image: imageBuffer,
+                imageURL,
             };
             const result = await userCollection.insertOne(user);
+            res.json(result);
+        });
+        app.put("/user", async (req, res) => {
+            const data = req.body;
+            const filter = { email: data.email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: data,
+            };
+            const result = await userCollection.updateOne(
+                filter,
+                updateDoc,
+                options
+            );
             res.json(result);
         });
     } finally {
