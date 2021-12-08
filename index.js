@@ -22,7 +22,31 @@ async function run() {
         await client.connect();
         const database = client.db("whatsAppClone");
         const userCollection = database.collection("users");
+        const conversationCollection = database.collection("conversation");
         console.log("Database connected");
+
+        app.get("/conversation/:email", async (req, res) => {
+            const email = req.params.email;
+
+            const query = {
+                "creator.email": email,
+            };
+            const cursor = conversationCollection.find(query);
+            const result = await cursor.toArray();
+            res.json(result);
+        });
+
+        app.post("/createConversation", async (req, res) => {
+            const { creator, participant } = req.body;
+            const createConversation = {
+                creator,
+                participant,
+            };
+            const result = await conversationCollection.insertOne(
+                createConversation
+            );
+            res.json(result);
+        });
 
         app.get("/users", async (req, res) => {
             const cursor = userCollection.find({});
