@@ -29,7 +29,10 @@ async function run() {
             const email = req.params.email;
 
             const query = {
-                "creator.email": email,
+                $or: [
+                    { "creator.email": email },
+                    { "participant.email": email },
+                ],
             };
             const cursor = conversationCollection.find(query);
             const result = await cursor.toArray();
